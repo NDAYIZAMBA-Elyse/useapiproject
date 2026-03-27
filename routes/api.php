@@ -18,13 +18,13 @@ $router->post('login', 'AuthController@login');
 $router->post('register', 'AuthController@register');
 $router->post('logout', 'AuthController@logout');
 
- $router->get('/membres', 'UserController@index');
+//  $router->get('/membres', 'UserController@index');
 // =====================
 // ROUTES PROTÉGÉES (à implémenter plus tard)
 // =====================
 $router->group(['middleware' => 'JwtMiddleware'], function ($router) {
     // Routes membres protégées (modification)
-    // $router->get('/membres', 'UserController@index');
+    $router->get('/membres', 'UserController@index');
     $router->get('/membres/{id}', 'UserController@show');
     $router->post('/membres', 'UserController@store');
     $router->put('/membres/{id}', 'UserController@update');

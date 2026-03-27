@@ -27,7 +27,8 @@ class UserController extends Controller {
         // Ajouter des informations de logging
         $this->logAction('VIEW_ALL', 'Consultation de tous les membres', $currentUser['id'], $currentUser['cooperative']);
         
-        $membres = $userModel->getAll($conditions, 'DATE_ADHESION DESC');
+        $membres = $userModel->getAll($conditions, 'NOM_MEMBRES ASC');
+
         $this->success([
             'data' => $membres,
             'count' => count($membres),

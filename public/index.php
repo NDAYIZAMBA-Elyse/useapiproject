@@ -86,7 +86,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'error' => true,
-        'message' => 'Erreur interne du serveur',
+        'message' => 'Erreur interne du serveur111',
         'debug' => (APP_ENV === 'development') ? $e->getMessage() : null
     ]);
 }
