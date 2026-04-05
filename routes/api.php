@@ -50,27 +50,6 @@ $router->group(['middleware' => 'JwtMiddleware'], function ($router) {
     $router->get('/profile', 'UserController@profile'); // Profil complet
 });
 
-// $router->group(['middleware' => 'JwtMiddleware'], function ($router) {
-//     // Routes protégées ici
-//     $router->get('membres', 'UserController@index');
-//     $router->get('/membres/{id}', 'UserController@show');
-//     $router->post('membres', 'UserController@store');
-//     $router->put('membres/{id}', 'UserController@update');
-//     $router->delete('membres/{id}', 'UserController@destroy');
-//     $router->get('membres/{id}/stats', 'UserController@stats');
-//         // Autres routes protégées...
-// });
-
-// $router->group(['middleware' => 'JwtMiddleware'], function ($router) {
-//     // Routes protégées ici
-//     $router->get('roles', 'RolesController@index');
-//     $router->get('/roles/{id}', 'RolesController@show');
-//     $router->post('roles', 'RolesController@store');
-//     $router->put('roles/{id}', 'RolesController@update');
-//     $router->delete('roles/{id}', 'RolesController@destroy');
-//     $router->get('roles/{id}/stats', 'RolesController@stats');
-//         // Autres routes protégées...
-// });
 
 // =====================
 // DISPATCH

@@ -6,75 +6,124 @@ require_once __DIR__ . '/../helpers/TokenHelper.php';
 
 class UserController extends Controller {
     
-    public function index() {
-        // Vérifier l'authentification via token
-        $currentUser = TokenHelper::getUser();
-        
-        if (!$currentUser) {
-            return $this->error('Non authentifié', 401);
-        }
-        
-        $userModel = $this->model('User');
-        
-        // Conditions de base : membres actifs
-        $conditions = ['STATUT_MEMBRES' => 1];
-        
-        // Si l'utilisateur n'est pas admin, filtrer par sa coopérative
-        if ($currentUser['role'] != 1 && $currentUser['cooperative']) {
-            $conditions['COOPERATIVE_ID'] = $currentUser['cooperative'];
-        }
-        
-        // Ajouter des informations de logging
-        $this->logAction('VIEW_ALL', 'Consultation de tous les membres', $currentUser['id'], $currentUser['cooperative']);
-        
-        $membres = $userModel->getAll($conditions, 'NOM_MEMBRES ASC');
+public function index()
+{
+    $currentUser = TokenHelper::getUser();
 
-        $this->success([
-            'data' => $membres,
-            'count' => count($membres),
-            'requested_by' => [
-                'id' => $currentUser['id'],
-                'nom' => $currentUser['nom'],
-                'prenom' => $currentUser['prenom'],
-                'cooperative_id' => $currentUser['cooperative']
-            ],
-            'filters_applied' => $conditions
-        ]);
+    if (!$currentUser) {
+        return $this->error('Non authentifié', 401);
     }
 
-    public function show($id) {
-        // Vérifier l'authentification
-        $currentUser = TokenHelper::getUser();
+    $page = $_GET['page'] ?? 1;
+    $limit = $_GET['limit'] ?? 10;
+
+    $cooperativeId = ($currentUser['role'] == 1)
+        ? null
+        : $currentUser['cooperative'];
+
+    $result = $this->model('User')
+        ->paginateWithDetails($page, $limit, $cooperativeId);
+
+    return $this->success([
+        'membres' => $result['data'],
+        'pagination' => $result['pagination']
+    ]);
+}
+    // public function index() {
+    //     // Vérifier l'authentification via token
+    //     $currentUser = TokenHelper::getUser();
         
-        if (!$currentUser) {
-            return $this->error('Non authentifié', 401);
-        }
+    //     if (!$currentUser) {
+    //         return $this->error('Non authentifié', 401);
+    //     }
         
-        $userModel = $this->model('User');
-        $membre = $userModel->getOne(['ID_MEMBRES' => $id]);
+    //     $userModel = $this->model('User');
         
-        if (!$membre) {
-            return $this->error('Membre not found', 404);
-        }
+    //     // Conditions de base : membres actifs
+    //     $conditions = ['STATUT_MEMBRES' => 1];
         
-        // Vérifier les permissions : admin ou même coopérative
-        if ($currentUser['role'] != 1 && $membre['COOPERATIVE_ID'] != $currentUser['cooperative']) {
-            return $this->error('Accès interdit', 403);
-        }
+    //     // Si l'utilisateur n'est pas admin, filtrer par sa coopérative
+    //     if ($currentUser['role'] != 1 && $currentUser['cooperative']) {
+    //         $conditions['COOPERATIVE_ID'] = $currentUser['cooperative'];
+    //     }
         
-        // Log l'action
-        $this->logAction('VIEW', "Consultation du membre ID: $id", $currentUser['id'], $currentUser['cooperative']);
+    //     // Ajouter des informations de logging
+    //     $this->logAction('VIEW_ALL', 'Consultation de tous les membres', $currentUser['id'], $currentUser['cooperative']);
         
-        unset($membre['PASSWORD']);
-        $this->success([
-            'data' => $membre,
-            'requested_by' => [
-                'id' => $currentUser['id'],
-                'nom' => $currentUser['nom'],
-                'prenom' => $currentUser['prenom']
-            ]
-        ]);
+    //     $membres = $userModel->getAll($conditions, 'NOM_MEMBRES ASC');
+
+    //     $this->success([
+    //         'data' => $membres,
+    //         'count' => count($membres),
+    //         'requested_by' => [
+    //             'id' => $currentUser['id'],
+    //             'nom' => $currentUser['nom'],
+    //             'prenom' => $currentUser['prenom'],
+    //             'cooperative_id' => $currentUser['cooperative']
+    //         ],
+    //         'filters_applied' => $conditions
+    //     ]);
+    // }
+
+    public function show($id)
+{
+    $currentUser = TokenHelper::getUser();
+
+    if (!$currentUser) {
+        return $this->error('Non authentifié', 401);
     }
+
+    $membre = $this->model('User')->findWithDetails($id);
+
+    if (!$membre) {
+        return $this->error('Membre introuvable', 404);
+    }
+
+    if (
+        $currentUser['role'] != 1 &&
+        $membre['COOPERATIVE_ID'] != $currentUser['cooperative']
+    ) {
+        return $this->error('Accès interdit', 403);
+    }
+
+    return $this->success([
+        'membre' => $membre
+    ]);
+}
+
+    // public function show($id) {
+    //     // Vérifier l'authentification
+    //     $currentUser = TokenHelper::getUser();
+        
+    //     if (!$currentUser) {
+    //         return $this->error('Non authentifié', 401);
+    //     }
+        
+    //     $userModel = $this->model('User');
+    //     $membre = $userModel->getOne(['ID_MEMBRES' => $id]);
+        
+    //     if (!$membre) {
+    //         return $this->error('Membre not found', 404);
+    //     }
+        
+    //     // Vérifier les permissions : admin ou même coopérative
+    //     if ($currentUser['role'] != 1 && $membre['COOPERATIVE_ID'] != $currentUser['cooperative']) {
+    //         return $this->error('Accès interdit', 403);
+    //     }
+        
+    //     // Log l'action
+    //     $this->logAction('VIEW', "Consultation du membre ID: $id", $currentUser['id'], $currentUser['cooperative']);
+        
+    //     unset($membre['PASSWORD']);
+    //     $this->success([
+    //         'data' => $membre,
+    //         'requested_by' => [
+    //             'id' => $currentUser['id'],
+    //             'nom' => $currentUser['nom'],
+    //             'prenom' => $currentUser['prenom']
+    //         ]
+    //     ]);
+    // }
     
     public function store() {
         // Vérifier l'authentification
@@ -88,9 +137,10 @@ class UserController extends Controller {
         
         // Validation
         $errors = $this->validate($input, [
-            'NOM_MEMBRES' => 'required|min:2|max:100',
+            'NOM_MEMBRES' => 'required|min:3|max:100',
             'PRENOM_MEMBRES' => 'required|min:2|max:100',
             'EMAIL_MEMBRES' => 'required|email',
+            'ROLE_ID' => 'required|integer',
             'TELEPHONE' => 'required'
         ]);
         
@@ -132,10 +182,18 @@ class UserController extends Controller {
         // Hasher le mot de passe
         $input['PASSWORD'] = password_hash(0000, PASSWORD_DEFAULT);
         $input['USERNAME'] = $input['EMAIL_MEMBRES'];
+
+        // $input['TYPE_IDENTITE_ID'] = $input['TYPE_IDENTITE_ID'];
+        // $input['NUMERO_IDENTITE'] = $input['NUMERO_IDENTITE'];
+        // $input['ADRESSE_MEMBRE'] = $input['ADRESSE_MEMBRE'];
+        // $input['DATE_NAISSANCE'] = $input['DATE_NAISSANCE'];
+        // $input['LIEU_NAISSANCE'] = $input['LIEU_NAISSANCE'];
+
         $input['DATE_ADHESION'] = date('Y-m-d H:i:s');
         $input['DATE_MODIFICATION'] = date('Y-m-d H:i:s');
         $input['STATUT_MEMBRES'] = 1;
         $input['FAIT_PAR'] = $currentUser['id'];
+        $input['MODIFIE_PAR'] = $currentUser['id'];
         
         // Créer le membre
         $membreId = $userModel->create($input);
@@ -378,80 +436,124 @@ class UserController extends Controller {
             $this->error('Failed to update profile');
         }
     }
-    
-    public function search() {
-        // Vérifier l'authentification
-        $currentUser = TokenHelper::getUser();
-        
-        if (!$currentUser) {
-            return $this->error('Non authentifié', 401);
-        }
-        
-        $query = isset($_GET['q']) ? $_GET['q'] : '';
-        
-        if (empty($query)) {
-            return $this->error('Search query is required', 400);
-        }
-        
-        $userModel = $this->model('User');
-        $membres = $userModel->search($query);
-        
-        // Filtrer par coopérative si l'utilisateur n'est pas admin
-        if ($currentUser['role'] != 1) {
-            $membres = array_filter($membres, function($membre) use ($currentUser) {
-                return $membre['COOPERATIVE_ID'] == $currentUser['cooperative'];
-            });
-            $membres = array_values($membres); // Réindexer
-        }
-        
-        $this->logAction('SEARCH', "Recherche: $query", $currentUser['id'], $currentUser['cooperative']);
-        
-        $this->success([
-            'data' => $membres,
-            'count' => count($membres),
-            'search_query' => $query,
-            'searched_by' => [
-                'id' => $currentUser['id'],
-                'nom' => $currentUser['nom'],
-                'prenom' => $currentUser['prenom'],
-                'cooperative_id' => $currentUser['cooperative']
-            ]
-        ]);
+
+    public function search()
+{
+    $currentUser = TokenHelper::getUser();
+
+    if (!$currentUser) {
+        return $this->error('Non authentifié', 401);
     }
-    
-    public function byCooperative($cooperativeId) {
-        // Vérifier l'authentification
-        $currentUser = TokenHelper::getUser();
-        
-        if (!$currentUser) {
-            return $this->error('Non authentifié', 401);
-        }
-        
-        // Vérifier les permissions
-        if ($currentUser['role'] != 1 && $cooperativeId != $currentUser['cooperative']) {
-            return $this->error('Accès interdit', 403);
-        }
-        
-        $userModel = $this->model('User');
-        $membres = $userModel->getAll([
-            'COOPERATIVE_ID' => $cooperativeId,
-            'STATUT_MEMBRES' => 1
-        ], 'NOM_MEMBRES ASC');
-        
-        $this->logAction('VIEW_BY_COOP', "Consultation membres coopérative ID: $cooperativeId", $currentUser['id'], $currentUser['cooperative']);
-        
-        $this->success([
-            'data' => $membres,
-            'count' => count($membres),
-            'cooperative_id' => $cooperativeId,
-            'requested_by' => [
-                'id' => $currentUser['id'],
-                'nom' => $currentUser['nom'],
-                'prenom' => $currentUser['prenom'],
-                'cooperative_id' => $currentUser['cooperative']
-            ]
-        ]);
+
+    $query = $_GET['q'] ?? '';
+
+    if (!$query) {
+        return $this->error('Query requise', 400);
     }
+
+    $cooperativeId = ($currentUser['role'] == 1)
+        ? null
+        : $currentUser['cooperative'];
+
+    $data = $this->model('User')
+        ->searchWithCoop($query, $cooperativeId);
+
+    return $this->success([
+        'data' => $data
+    ]);
+}
+    
+    // public function search() {
+    //     // Vérifier l'authentification
+    //     $currentUser = TokenHelper::getUser();
+        
+    //     if (!$currentUser) {
+    //         return $this->error('Non authentifié', 401);
+    //     }
+        
+    //     $query = isset($_GET['q']) ? $_GET['q'] : '';
+        
+    //     if (empty($query)) {
+    //         return $this->error('Search query is required', 400);
+    //     }
+        
+    //     $userModel = $this->model('User');
+    //     $membres = $userModel->search($query);
+        
+    //     // Filtrer par coopérative si l'utilisateur n'est pas admin
+    //     if ($currentUser['role'] != 1) {
+    //         $membres = array_filter($membres, function($membre) use ($currentUser) {
+    //             return $membre['COOPERATIVE_ID'] == $currentUser['cooperative'];
+    //         });
+    //         $membres = array_values($membres); // Réindexer
+    //     }
+        
+    //     $this->logAction('SEARCH', "Recherche: $query", $currentUser['id'], $currentUser['cooperative']);
+        
+    //     $this->success([
+    //         'data' => $membres,
+    //         'count' => count($membres),
+    //         'search_query' => $query,
+    //         'searched_by' => [
+    //             'id' => $currentUser['id'],
+    //             'nom' => $currentUser['nom'],
+    //             'prenom' => $currentUser['prenom'],
+    //             'cooperative_id' => $currentUser['cooperative']
+    //         ]
+    //     ]);
+    // }
+
+    public function byCooperative($cooperativeId)
+{
+    $currentUser = TokenHelper::getUser();
+
+    if (!$currentUser) {
+        return $this->error('Non authentifié', 401);
+    }
+
+    if ($currentUser['role'] != 1 && $cooperativeId != $currentUser['cooperative']) {
+        return $this->error('Accès interdit', 403);
+    }
+
+    $data = $this->model('User')
+        ->paginateWithDetails(1, 100, $cooperativeId);
+
+    return $this->success($data);
+}
+    
+    // public function byCooperative($cooperativeId) {
+    //     // Vérifier l'authentification
+    //     $currentUser = TokenHelper::getUser();
+        
+    //     if (!$currentUser) {
+    //         return $this->error('Non authentifié', 401);
+    //     }
+        
+    //     // Vérifier les permissions
+    //     if ($currentUser['role'] != 1 && $cooperativeId != $currentUser['cooperative']) {
+    //         return $this->error('Accès interdit', 403);
+    //     }
+        
+    //     $userModel = $this->model('User');
+    //     $membres = $userModel->getAll([
+    //         'COOPERATIVE_ID' => $cooperativeId,
+    //         'STATUT_MEMBRES' => 1
+    //     ], 'NOM_MEMBRES ASC');
+        
+    //     $this->logAction('VIEW_BY_COOP', "Consultation membres coopérative ID: $cooperativeId", $currentUser['id'], $currentUser['cooperative']);
+        
+    //     $this->success([
+    //         'data' => $membres,
+    //         'count' => count($membres),
+    //         'cooperative_id' => $cooperativeId,
+    //         'requested_by' => [
+    //             'id' => $currentUser['id'],
+    //             'nom' => $currentUser['nom'],
+    //             'prenom' => $currentUser['prenom'],
+    //             'cooperative_id' => $currentUser['cooperative']
+    //         ]
+    //     ]);
+    // }
     
     public function stats() {
         // Vérifier l'authentification

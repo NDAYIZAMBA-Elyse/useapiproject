@@ -203,7 +203,7 @@ class Model {
     }
     
     // Exemple de méthode spécifique
-    public function suspendreEtudiant($id) {
+    public function suspendre($id) {
         return $this->update($id, ['statut' => 1]);
     }
 }
