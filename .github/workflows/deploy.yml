@@ -1,0 +1,32 @@
+name: Deploy Project
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Debug HOST
+        run: echo $HOST
+        env:
+          HOST: ${{ secrets.HOST }}
+
+      - name: Deploy to VPS
+        env:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          DEPLOYMENT_DIRECTORY: /var/www/html/useapiproject
+        run: |
+          echo "Deploying to $HOST"
+          sshpass -p "$PASSWORD" rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ "$USERNAME@$HOST:$DEPLOYMENT_DIRECTORY"
