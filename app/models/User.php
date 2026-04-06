@@ -55,7 +55,7 @@ class User extends Model {
                     r.DESCRIPTION_ROLE,
                     c.NOM_COOPER,
 
-                    ref.NOM_MEMBRES AS REFERENCE_MEMBRE,
+                    ref.PRENOM_MEMBRES AS REFERENCE_MEMBRE,
                     fait.NOM_MEMBRES AS FAIT_PAR,
                     modi.NOM_MEMBRES AS MODIFIE_PAR
 
@@ -108,9 +108,9 @@ class User extends Model {
                     r.DESCRIPTION_ROLE,
                     c.NOM_COOPER,
 
-                    ref.NOM_MEMBRES AS REFERENCE_MEMBRE,
-                    fait.NOM_MEMBRES AS FAIT_PAR,
-                    modi.NOM_MEMBRES AS MODIFIE_PAR
+                    CONCAT(ref.NOM_MEMBRES, ' ', ref.PRENOM_MEMBRES) AS REFERENCE_MEMBRE,
+                    CONCAT(fait.NOM_MEMBRES, ' ', fait.PRENOM_MEMBRES) AS FAIT_PAR,
+                    CONCAT(modi.NOM_MEMBRES, ' ', modi.PRENOM_MEMBRES) AS MODIFIE_PAR
 
                 FROM membres m
                 LEFT JOIN roles r ON r.ID_ROLES = m.ROLE_ID
