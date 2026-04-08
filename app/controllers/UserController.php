@@ -438,30 +438,30 @@ public function index()
     }
 
     public function search()
-{
-    $currentUser = TokenHelper::getUser();
+    {
+        $currentUser = TokenHelper::getUser();
 
-    if (!$currentUser) {
-        return $this->error('Non authentifié', 401);
+        if (!$currentUser) {
+            return $this->error('Non authentifié', 401);
+        }
+
+        $query = $_GET['q'] ?? '';
+
+        if (!$query) {
+            return $this->error('Query requise', 400);
+        }
+
+        $cooperativeId = ($currentUser['role'] == 1)
+            ? null
+            : $currentUser['cooperative'];
+
+        $data = $this->model('User')
+            ->searchWithCoop($query, $cooperativeId);
+
+        return $this->success([
+            'data' => $data
+        ]);
     }
-
-    $query = $_GET['q'] ?? '';
-
-    if (!$query) {
-        return $this->error('Query requise', 400);
-    }
-
-    $cooperativeId = ($currentUser['role'] == 1)
-        ? null
-        : $currentUser['cooperative'];
-
-    $data = $this->model('User')
-        ->searchWithCoop($query, $cooperativeId);
-
-    return $this->success([
-        'data' => $data
-    ]);
-}
     
     // public function search() {
     //     // Vérifier l'authentification

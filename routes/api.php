@@ -36,8 +36,13 @@ $router->group(['middleware' => 'JwtMiddleware'], function ($router) {
     $router->get('/membres/search', 'UserController@search');
     $router->get('/membres/cooperative/{id}', 'UserController@byCooperative');
     $router->get('/membres/stats', 'UserController@stats');
-    
-    // Routes rôles protégées (modification)
+
+    $router->get('/me', 'AuthController@me'); // Infos utilisateur courant
+    // $router->get('/profile', 'UserController@profile'); // Profil complet
+    $router->get('/profile', 'AuthController@profile'); // Profil complet
+    $router->post('refresh', 'AuthController@refresh');
+
+       // Routes rôles protégées (modification)
     $router->get('/roles', 'RolesController@index');
     $router->get('/roles/{id}', 'RolesController@show');
     $router->post('/roles', 'RolesController@store');
@@ -46,8 +51,21 @@ $router->group(['middleware' => 'JwtMiddleware'], function ($router) {
     $router->get('/roles/{id}/stats', 'RolesController@stats');
     $router->get('/roles/search', 'RolesController@search');
 
-    $router->get('/me', 'AuthController@me'); // Infos utilisateur courant
-    $router->get('/profile', 'UserController@profile'); // Profil complet
+       // Routes epargnes protégées (modification)
+    $router->get('/epargnes', 'EpargneController@index');
+    $router->get('/epargnes/{id}', 'EpargneController@show');
+    $router->post('/epargnes', 'EpargneController@store');
+    $router->put('/epargnes/{id}', 'EpargneController@update');
+    $router->delete('/epargnes/{id}', 'EpargneController@destroy');
+    $router->get('/epargnes/{id}/stats', 'EpargneController@stats');
+    $router->get('/epargnes/search', 'EpargneController@search');
+
+    // 🔥 NOUVELLE ROUTE : Récupérer les cumuls d'un membre
+    $router->get('/epargnes/cumuls/membre', 'EpargneController@getCumulsByMembre');
+    $router->post('/epargnes/cumuls/membre', 'EpargneController@getCumulsByMembre');
+
+    // 🔥 NOUVELLE ROUTE : Membres ayant déjà cotisé aujourd'hui
+$router->get('/epargnes/cotises/today', 'EpargneController@getMembresCoticesToday');
 });
 
 

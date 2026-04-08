@@ -2,26 +2,92 @@
 // app/controllers/RolesController.php
 
 require_once 'Controller.php';
+require_once __DIR__ . '/../helpers/TokenHelper.php';
 
 class RolesController extends Controller {
     
-    public function index() {
-        // Récupérer tous les rôles non supprimés
-        $rolesModel = $this->model('Roles');
-        $roles = $rolesModel->getAll(['STATUT_ROLE' => 1], 'DESCRIPTION_ROLE ASC');
-        $this->success($roles);
-    }
+    // public function index() {
+    //     // Récupérer tous les rôles non supprimés
+    //     $rolesModel = $this->model('Roles');
+    //     $roles = $rolesModel->getAll(['STATUT_ROLE' => 1], 'DESCRIPTION_ROLE ASC');
+    //     $this->success($roles);
+    // }
+//     public function index()
+// {
+//     $rolesModel = $this->model('Roles');
 
-    public function show($id) {
-        $rolesModel = $this->model('Roles');
-        $role = $rolesModel->getOne(['ID_ROLES' => $id]);
+//     // 🔥 paramètres pagination
+//     $page  = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+//     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+
+//     // sécurité
+//     $page  = max($page, 1);
+//     $limit = max($limit, 1);
+
+//     $offset = ($page - 1) * $limit;
+
+//     // 🔥 data
+//     $roles = $rolesModel->getAll(
+//         ['STATUT_ROLE' => 1],
+//         'DESCRIPTION_ROLE ASC',
+//         $limit,
+//         $offset
+//     );
+
+//     // 🔥 total
+//     $total = $rolesModel->count([
+//         'STATUT_ROLE' => 1
+//     ]);
+
+//     $this->success([
+//         'roles' => $roles,
+//         'pagination' => [
+//             'page' => $page,
+//             'limit' => $limit,
+//             'total' => $total,
+//             'total_pages' => ceil($total / $limit)
+//         ]
+//     ], 'Liste des rôles paginée');
+// }
+public function index()
+{
+    $rolesModel = $this->model('Roles');
+
+    $page  = $_GET['page'] ?? 1;
+    $limit = $_GET['limit'] ?? 10;
+    $search = $_GET['search'] ?? null;
+
+    $result = $rolesModel->paginateWithDetails($page, $limit, $search);
+
+    $this->success($result, 'Liste des rôles');
+}
+
+    // public function show($id) {
+    //     $rolesModel = $this->model('Roles');
+    //     $role = $rolesModel->getOne(['ID_ROLES' => $id]);
         
-        if ($role) {
-            $this->success($role);
-        } else {
-            $this->error('Role not found', 404);
-        }
+    //     if ($role) {
+    //         $this->success($role);
+    //     } else {
+    //         $this->error('Role not found', 404);
+    //     }
+    // }
+
+    public function show($id)
+{
+    $rolesModel = $this->model('Roles');
+
+    $role = $rolesModel->getOne([
+        'ID_ROLES' => (int)$id,
+        'STATUT_ROLE' => 1
+    ]);
+
+    if ($role) {
+        $this->success($role, 'Rôle trouvé');
+    } else {
+        $this->error('Rôle non trouvé', 404);
     }
+}
 
     public function store() {
         // Créer un nouveau rôle
