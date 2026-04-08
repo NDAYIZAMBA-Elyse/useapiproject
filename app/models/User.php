@@ -7,30 +7,6 @@ class User extends Model {
     
     protected $table = 'membres';
     protected $primaryKey = 'ID_MEMBRES';
-    
-    // Champs autorisés pour création/mise à jour
-    // protected $fillable = [
-    //     'NOM_MEMBRES',
-    //     'PRENOM_MEMBRES',
-    //     'TELEPHONE',
-    //     'GENRE_MEMBRES',
-    //     'EMAIL_MEMBRES',
-    //     'TYPE_IDENTITE_ID',
-    //     'NUMERO_IDENTITE',
-    //     'ADRESSE_MEMBRE',
-    //     'DATE_NAISSANCE',
-    //     'LIEU_NAISSANCE',
-    //     'USERNAME',
-    //     'PASSWORD',
-    //     'ROLE_ID',
-    //     'COOPERATIVE_ID',
-    //     'PHOTO_PATH',
-    //     'DATE_ADHESION',
-    //     'DATE_MODIFICATION',
-    //     'REFERENCE_MEMBRE',
-    //     'FAIT_PAR',
-    //     'STATUT_MEMBRES'
-    // ];
 
     // 🔥 Récupérer un membre avec toutes les relations
     public function findWithDetails($id)
@@ -72,6 +48,78 @@ class User extends Model {
 
         $stmt = $this->db->prepare($sql);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getCoopSociete($id)
+    {
+        $sql = "SELECT 
+                    c.ID_COOPERATIVE,
+                    c.NOM_COOPER,
+                    c.NIF_COOPER,
+                    c.RC_COOPER,
+                    c.TELEPHONE_COOPER,
+                    c.EMAIL_COOPER,
+                    c.ADRESSE_COOPER,
+                    c.LOGO_CAMPANY,
+                    c.INTERET,
+                    c.AMANDE_INT,
+                    c.AMANDE_COTISATION,
+                    c.AMANDE_ABS_REUNION,
+                    c.AMANDE_RETAR_REUNION,
+                    c.REPRESENTANT_COOP,
+                    c.DATE_ACTION,
+                    c.STATUT_COOPER
+                FROM cooperatives c
+                WHERE c.ID_COOPERATIVE = :id
+                AND c.STATUT_COOPER = 1
+                LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getCoopSocieteWithStats($id)
+    {
+        $sql = "SELECT 
+                    c.ID_COOPERATIVE,
+                    c.NOM_COOPER,
+                    c.NIF_COOPER,
+                    c.RC_COOPER,
+                    c.TELEPHONE_COOPER,
+                    c.EMAIL_COOPER,
+                    c.ADRESSE_COOPER,
+                    c.LOGO_CAMPANY,
+                    c.INTERET,
+                    c.AMANDE_INT,
+                    c.AMANDE_COTISATION,
+                    c.AMANDE_ABS_REUNION,
+                    c.AMANDE_RETAR_REUNION,
+                    c.REPRESENTANT_COOP,
+                    c.DATE_ACTION,
+                    c.STATUT_COOPER,
+                    -- Statistiques
+                    (SELECT COUNT(*) FROM membres WHERE COOPERATIVE_ID = c.ID_COOPERATIVE AND STATUT_MEMBRES = 1) AS total_membres,
+                    (SELECT SUM(MONTANT_COTISE) FROM cotisations WHERE MEMBRE_ID IN (SELECT ID_MEMBRES FROM membres WHERE COOPERATIVE_ID = c.ID_COOPERATIVE) AND STATUT_COTISE = 1) AS total_cotisations,
+                    (SELECT SUM(ASSISATANCE) FROM cotisations WHERE MEMBRE_ID IN (SELECT ID_MEMBRES FROM membres WHERE COOPERATIVE_ID = c.ID_COOPERATIVE) AND STATUT_COTISE = 1) AS total_assistances,
+                    (SELECT COUNT(*) FROM cotisations WHERE MEMBRE_ID IN (SELECT ID_MEMBRES FROM membres WHERE COOPERATIVE_ID = c.ID_COOPERATIVE) AND STATUT_COTISE = 1) AS nombre_cotisations,
+                    u.NOM_MEMBRES AS REPRESENTANT_NOM,
+                    u.PRENOM_MEMBRES AS REPRESENTANT_PRENOM,
+                    u.EMAIL_MEMBRES AS REPRESENTANT_EMAIL,
+                    u.TELEPHONE AS REPRESENTANT_TELEPHONE
+                FROM cooperatives c
+                LEFT JOIN membres u ON u.ID_MEMBRES = c.REPRESENTANT_COOP
+                WHERE c.ID_COOPERATIVE = :id
+                AND c.STATUT_COOPER = 1
+                LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
         $stmt->execute();
 
         return $stmt->fetch(PDO::FETCH_ASSOC);

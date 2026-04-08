@@ -41,6 +41,9 @@ $router->group(['middleware' => 'JwtMiddleware'], function ($router) {
     // $router->get('/profile', 'UserController@profile'); // Profil complet
     $router->get('/profile', 'AuthController@profile'); // Profil complet
     $router->post('refresh', 'AuthController@refresh');
+    // Routes pour la coopérative de l'utilisateur connecté
+    $router->get('/auth/me/cooperative', 'AuthController@myCooperative');
+    $router->get('/auth/me/cooperative/stats', 'AuthController@myCooperativeWithStats');
 
        // Routes rôles protégées (modification)
     $router->get('/roles', 'RolesController@index');

@@ -12,7 +12,8 @@ class AuthController extends Controller {
                 'POST /login' => 'User login',
                 'POST /register' => 'User registration',
                 'POST /logout' => 'User logout',
-                'GET /me' => 'Get current user from token'
+                'GET /me' => 'Get current user from token',
+                'GET /me/cooperative' => 'Get user cooperative from token'
             ]
         ]);
     }
@@ -135,6 +136,70 @@ class AuthController extends Controller {
         ]);
     }
     
+    /**
+     * Récupérer la coopérative de l'utilisateur connecté
+     * Avec jointure complète sur la table cooperatives
+     * 
+     * @return json
+     */
+    
+    public function myCooperative()
+    {
+        $currentUser = TokenHelper::getUser();
+
+        if (!$currentUser) {
+            return $this->error('Non authentifié', 401);
+        }
+
+        $cooperative = $this->model('User')->getCoopSociete($currentUser['cooperative']);
+
+        if (!$cooperative) {
+            return $this->error('Coopérative introuvable', 404);
+        }
+
+        if (
+            $currentUser['role'] != 1 &&
+            $cooperative['ID_COOPERATIVE'] != $currentUser['cooperative']
+        ) {
+            return $this->error('Accès interdit', 403);
+        }
+
+        return $this->success([
+            'cooperative' => $cooperative
+        ]);
+    }
+
+    /**
+     * Récupérer la coopérative avec les statistiques (nombre de membres, cotisations, etc.)
+     * 
+     * @return json
+     */
+    public function myCooperativeWithStats()
+    {
+        $currentUser = TokenHelper::getUser();
+
+        if (!$currentUser) {
+            return $this->error('Non authentifié', 401);
+        }
+
+        $cooperative = $this->model('User')->getCoopSocieteWithStats($currentUser['cooperative']);
+
+        if (!$cooperative) {
+            return $this->error('Coopérative introuvable', 404);
+        }
+
+        if (
+            $currentUser['role'] != 1 &&
+            $cooperative['ID_COOPERATIVE'] != $currentUser['cooperative']
+        ) {
+            return $this->error('Accès interdit', 403);
+        }
+
+        return $this->success([
+            'cooperative' => $cooperative
+        ]);
+    }
+
     public function profile() {
         // Récupérer le profil complet depuis la base
         $headers = getallheaders();
