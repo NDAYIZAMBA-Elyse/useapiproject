@@ -68,7 +68,7 @@ $router->group(['middleware' => 'JwtMiddleware'], function ($router) {
     $router->post('/epargnes/cumuls/membre', 'EpargneController@getCumulsByMembre');
 
     // 🔥 NOUVELLE ROUTE : Membres ayant déjà cotisé aujourd'hui
-$router->get('/epargnes/cotises/today', 'EpargneController@getMembresCoticesToday');
+    $router->get('/epargnes/cotises/today', 'EpargneController@getMembresCoticesToday');
 });
 
 
