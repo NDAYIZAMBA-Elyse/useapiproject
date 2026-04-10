@@ -6,29 +6,29 @@ require_once __DIR__ . '/../helpers/TokenHelper.php';
 
 class UserController extends Controller {
     
-public function index()
-{
-    $currentUser = TokenHelper::getUser();
+    public function index()
+    {
+        $currentUser = TokenHelper::getUser();
 
-    if (!$currentUser) {
-        return $this->error('Non authentifié', 401);
+        if (!$currentUser) {
+            return $this->error('Non authentifié', 401);
+        }
+
+        $page = $_GET['page'] ?? 1;
+        $limit = $_GET['limit'] ?? 10;
+
+        $cooperativeId = ($currentUser['role'] == 1)
+            ? null
+            : $currentUser['cooperative'];
+
+        $result = $this->model('User')
+            ->paginateWithDetails($page, $limit, $cooperativeId);
+
+        return $this->success([
+            'membres' => $result['data'],
+            'pagination' => $result['pagination']
+        ]);
     }
-
-    $page = $_GET['page'] ?? 1;
-    $limit = $_GET['limit'] ?? 10;
-
-    $cooperativeId = ($currentUser['role'] == 1)
-        ? null
-        : $currentUser['cooperative'];
-
-    $result = $this->model('User')
-        ->paginateWithDetails($page, $limit, $cooperativeId);
-
-    return $this->success([
-        'membres' => $result['data'],
-        'pagination' => $result['pagination']
-    ]);
-}
     // public function index() {
     //     // Vérifier l'authentification via token
     //     $currentUser = TokenHelper::getUser();
@@ -66,30 +66,30 @@ public function index()
     // }
 
     public function show($id)
-{
-    $currentUser = TokenHelper::getUser();
+    {
+        $currentUser = TokenHelper::getUser();
 
-    if (!$currentUser) {
-        return $this->error('Non authentifié', 401);
+        if (!$currentUser) {
+            return $this->error('Non authentifié', 401);
+        }
+
+        $membre = $this->model('User')->findWithDetails($id);
+
+        if (!$membre) {
+            return $this->error('Membre introuvable', 404);
+        }
+
+        if (
+            $currentUser['role'] != 1 &&
+            $membre['COOPERATIVE_ID'] != $currentUser['cooperative']
+        ) {
+            return $this->error('Accès interdit', 403);
+        }
+
+        return $this->success([
+            'membre' => $membre
+        ]);
     }
-
-    $membre = $this->model('User')->findWithDetails($id);
-
-    if (!$membre) {
-        return $this->error('Membre introuvable', 404);
-    }
-
-    if (
-        $currentUser['role'] != 1 &&
-        $membre['COOPERATIVE_ID'] != $currentUser['cooperative']
-    ) {
-        return $this->error('Accès interdit', 403);
-    }
-
-    return $this->success([
-        'membre' => $membre
-    ]);
-}
 
     // public function show($id) {
     //     // Vérifier l'authentification
@@ -504,22 +504,22 @@ public function index()
     // }
 
     public function byCooperative($cooperativeId)
-{
-    $currentUser = TokenHelper::getUser();
+    {
+        $currentUser = TokenHelper::getUser();
 
-    if (!$currentUser) {
-        return $this->error('Non authentifié', 401);
+        if (!$currentUser) {
+            return $this->error('Non authentifié', 401);
+        }
+
+        if ($currentUser['role'] != 1 && $cooperativeId != $currentUser['cooperative']) {
+            return $this->error('Accès interdit', 403);
+        }
+
+        $data = $this->model('User')
+            ->paginateWithDetails(1, 100, $cooperativeId);
+
+        return $this->success($data);
     }
-
-    if ($currentUser['role'] != 1 && $cooperativeId != $currentUser['cooperative']) {
-        return $this->error('Accès interdit', 403);
-    }
-
-    $data = $this->model('User')
-        ->paginateWithDetails(1, 100, $cooperativeId);
-
-    return $this->success($data);
-}
     
     // public function byCooperative($cooperativeId) {
     //     // Vérifier l'authentification

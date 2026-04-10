@@ -33,6 +33,23 @@ class Roles extends Model {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    // 🔥 Récupérer la liste des rôles
+        public function getRolesList()
+        {
+            $sql = "SELECT 
+                        r.ID_ROLES,
+                        r.DESCRIPTION_ROLE,
+                        r.STATUT_ROLE
+                    FROM roles r
+                    WHERE r.STATUT_ROLE = 1
+                    ORDER BY r.ID_ROLES ASC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
     // 🔥 Pagination 
     public function paginateWithDetails($page = 1, $limit = 10, $search = null)
     {

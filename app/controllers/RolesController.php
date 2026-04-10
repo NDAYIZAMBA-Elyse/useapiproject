@@ -62,16 +62,14 @@ public function index()
     $this->success($result, 'Liste des rôles');
 }
 
-    // public function show($id) {
-    //     $rolesModel = $this->model('Roles');
-    //     $role = $rolesModel->getOne(['ID_ROLES' => $id]);
-        
-    //     if ($role) {
-    //         $this->success($role);
-    //     } else {
-    //         $this->error('Role not found', 404);
-    //     }
-    // }
+    public function getRoles()
+{
+    $model = $this->model('Roles');
+    $roles = $model->getRolesList();
+    
+    $this->success($roles, 'Liste des rôles récupérée avec succès');
+}
+
 
     public function show($id)
 {

@@ -53,6 +53,8 @@ $router->group(['middleware' => 'JwtMiddleware'], function ($router) {
     $router->delete('/roles/{id}', 'RolesController@destroy');
     $router->get('/roles/{id}/stats', 'RolesController@stats');
     $router->get('/roles/search', 'RolesController@search');
+    $router->get('/selectRoles', 'RolesController@getRoles');
+
 
        // Routes epargnes protégées (modification)
     $router->get('/epargnes', 'EpargneController@index');

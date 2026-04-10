@@ -18,10 +18,10 @@ class AuthController extends Controller {
         ]);
     }
 
+
     public function login() {
         $input = $this->getInput();
         
-        // Validation
         $errors = $this->validate($input, [
             'email' => 'required|email',
             'password' => 'required'
@@ -35,28 +35,32 @@ class AuthController extends Controller {
         $user = $userModel->checkCredentials($input['email'], $input['password']);
         
         if ($user) {
-            // Générer un token JWT avec TOUTES les informations
+            // Générer un token avec TOUTES les informations récupérées
             $tokenPayload = [
-                'sub' => $user['ID_MEMBRES'],               // ID unique
-                'email' => $user['EMAIL_MEMBRES'],          // Email
-                'role' => $user['ROLE_ID'],                 // Rôle ID
-                'nom' => $user['NOM_MEMBRES'],              // Nom
-                'prenom' => $user['PRENOM_MEMBRES'],        // Prénom
-                'cooperative' => $user['COOPERATIVE_ID'],   // Coopérative ID
-                'telephone' => $user['TELEPHONE'],          // Téléphone
-                'reference' => $user['REFERENCE_MEMBRE'],   // Référence
-                'statut' => $user['STATUT_MEMBRES'],        // Statut
-                'username' => $user['USERNAME'] ?? '',      // Username
-                'type_identite' => $user['TYPE_IDENTITE_ID'] ?? null, // Type identité
-                'numero_identite' => $user['NUMERO_IDENTITE'] ?? '',  // Numéro identité
-                'adresse' => $user['ADRESSE_MEMBRE'] ?? '', // Adresse
-                'date_naissance' => $user['DATE_NAISSANCE'] ?? null, // Date naissance
-                'lieu_naissance' => $user['LIEU_NAISSANCE'] ?? '', // Lieu naissance
-                'photo' => $user['PHOTO_PATH'] ?? '',       // Photo
-                'date_adhesion' => $user['DATE_ADHESION'] ?? null, // Date adhésion
-                'fait_par' => $user['FAIT_PAR'] ?? null,    // Créé par
-                'iat' => time(),                            // Date d'émission
-                'exp' => time() + (7 * 24 * 60 * 60)        // Expiration (7 jours)
+                'sub' => $user['ID_MEMBRES'],
+                'email' => $user['EMAIL_MEMBRES'],
+                'role' => $user['ROLE_ID'],
+                'role_description' => $user['DESCRIPTION_ROLE'] ?? '',
+                'nom' => $user['NOM_MEMBRES'],
+                'prenom' => $user['PRENOM_MEMBRES'],
+                'cooperative' => $user['COOPERATIVE_ID'],
+                'cooperative_nom' => $user['NOM_COOPER'] ?? '',
+                'telephone' => $user['TELEPHONE'],
+                'reference' => $user['REFERENCE_MEMBRE'],
+                'reference_nom' => ($user['REFERENCE_MEMBRE_NOM'] ?? '') . ' ' . ($user['REFERENCE_MEMBRE_PRENOM'] ?? ''),
+                'statut' => $user['STATUT_MEMBRES'],
+                'username' => $user['USERNAME'] ?? '',
+                'type_identite' => $user['TYPE_IDENTITE_ID'] ?? null,
+                'numero_identite' => $user['NUMERO_IDENTITE'] ?? '',
+                'adresse' => $user['ADRESSE_MEMBRE'] ?? '',
+                'date_naissance' => $user['DATE_NAISSANCE'] ?? null,
+                'lieu_naissance' => $user['LIEU_NAISSANCE'] ?? '',
+                'photo' => $user['PHOTO_PATH'] ?? '',
+                'date_adhesion' => $user['DATE_ADHESION'] ?? null,
+                'fait_par' => $user['FAIT_PAR'],
+                'fait_par_nom' => ($user['FAIT_PAR_NOM'] ?? '') . ' ' . ($user['FAIT_PAR_PRENOM'] ?? ''),
+                'iat' => time(),
+                'exp' => time() + (7 * 24 * 60 * 60)
             ];
             
             $token = $this->generateJWT($tokenPayload);
@@ -69,9 +73,13 @@ class AuthController extends Controller {
                     'email' => $user['EMAIL_MEMBRES'],
                     'telephone' => $user['TELEPHONE'],
                     'role_id' => $user['ROLE_ID'],
+                    'role_description' => $user['DESCRIPTION_ROLE'] ?? '',
                     'photo' => $user['PHOTO_PATH'],
                     'cooperative_id' => $user['COOPERATIVE_ID'],
+                    'cooperative_nom' => $user['NOM_COOPER'] ?? '',
+                    'type_identite' => $user['TYPE_IDENTITE_ID'] ?? null,
                     'reference' => $user['REFERENCE_MEMBRE'],
+                    'fait_par_nom' => ($user['FAIT_PAR_NOM'] ?? '') . ' ' . ($user['FAIT_PAR_PRENOM'] ?? ''),
                     'statut' => $user['STATUT_MEMBRES']
                 ],
                 'token' => $token,
@@ -84,6 +92,7 @@ class AuthController extends Controller {
             $this->error('Email ou mot de passe incorrect', 401);
         }
     }
+
     
     public function register() {
         $userController = new UserController();
@@ -116,14 +125,17 @@ class AuthController extends Controller {
             'id' => $payload['sub'],
             'email' => $payload['email'],
             'role' => $payload['role'],
+            'role_description' => $payload['role_description'],
             'nom' => $payload['nom'],
             'prenom' => $payload['prenom'],
             'cooperative' => $payload['cooperative'],
+            'cooperative_nom' => $payload['cooperative_nom'],
             'telephone' => $payload['telephone'],
             'reference' => $payload['reference'],
+            'reference_nom' => $payload['reference_nom'],
             'statut' => $payload['statut'],
             'username' => $payload['username'] ?? '',
-            'type_identite' => $payload['type_identite'] ?? null,
+            'type_identite' => $payload['type_identite'],
             'numero_identite' => $payload['numero_identite'] ?? '',
             'adresse' => $payload['adresse'] ?? '',
             'date_naissance' => $payload['date_naissance'] ?? null,
@@ -131,6 +143,7 @@ class AuthController extends Controller {
             'photo' => $payload['photo'] ?? '',
             'date_adhesion' => $payload['date_adhesion'] ?? null,
             'fait_par' => $payload['fait_par'] ?? null,
+            'fait_par_nom' => $payload['fait_par_nom'] ?? null,
             'token_expires' => date('Y-m-d H:i:s', $payload['exp']),
             'via' => 'jwt_token_only'
         ]);

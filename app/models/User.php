@@ -247,22 +247,98 @@ class User extends Model {
      * Vérifier les identifiants de connexion
      * UTILISE find() au lieu de findBy() si findBy n'existe pas
      */
-    public function checkCredentials($email, $password) {
-        // Méthode 1: Utiliser la méthode findBy du parent (si elle existe maintenant)
-        if (method_exists($this, 'findBy')) {
-            $user = $this->find('EMAIL_MEMBRES', $email);
-        } 
-        // Méthode 2: Faire une requête directe
-        else {
-            $sql = "SELECT * FROM {$this->table} WHERE EMAIL_MEMBRES = :email LIMIT 1";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':email', $email);
-            $stmt->execute();
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        }
+    // public function checkCredentials($email, $password) {
+    //     // Méthode 1: Utiliser la méthode findBy du parent (si elle existe maintenant)
+    //     if (method_exists($this, 'findBy')) {
+    //         $user = $this->find('EMAIL_MEMBRES', $email);
+    //     } 
+    //     // Méthode 2: Faire une requête directe
+    //     else {
+    //         $sql = "SELECT * FROM {$this->table} WHERE EMAIL_MEMBRES = :email LIMIT 1";
+    //         $stmt = $this->db->prepare($sql);
+    //         $stmt->bindValue(':email', $email);
+    //         $stmt->execute();
+    //         $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    //     }
         
+    //     if ($user && password_verify($password, $user['PASSWORD'])) {
+    //         // Ne pas renvoyer le mot de passe
+    //         unset($user['PASSWORD']);
+    //         return $user;
+    //     }
+        
+    //     return false;
+    // }
+
+    public function checkCredentials($email, $password) {
+        // Requête avec jointures pour récupérer toutes les informations
+        $sql = "SELECT 
+                    m.ID_MEMBRES,
+                    m.NOM_MEMBRES,
+                    m.PRENOM_MEMBRES,
+                    m.TELEPHONE,
+                    m.EMAIL_MEMBRES,
+                    m.GENRE_MEMBRES,
+                    m.NUMERO_IDENTITE,
+                    m.ADRESSE_MEMBRE,
+                    m.DATE_NAISSANCE,
+                    m.LIEU_NAISSANCE,
+                    m.PHOTO_PATH,
+                    m.DATE_ADHESION,
+                    m.DATE_MODIFICATION,
+                    m.STATUT_MEMBRES,
+                    m.COOPERATIVE_ID,
+                    m.PASSWORD,
+                    m.ROLE_ID,
+                    m.REFERENCE_MEMBRE,
+                    m.FAIT_PAR,
+                    m.MODIFIE_PAR,
+                    m.USERNAME,
+                    m.TYPE_IDENTITE_ID,  -- 🔥 AJOUTÉ : Type identité
+                    -- Rôle
+                    r.DESCRIPTION_ROLE,
+                    
+                    -- Coopérative
+                    c.NOM_COOPER,
+                    c.EMAIL_COOPER,
+                    c.TELEPHONE_COOPER,
+                    c.ADRESSE_COOPER,
+                    c.LOGO_CAMPANY,
+                    
+                    -- Personne qui a fait l'action (création)
+                    fait.NOM_MEMBRES AS FAIT_PAR_NOM,
+                    fait.PRENOM_MEMBRES AS FAIT_PAR_PRENOM,
+                    fait.EMAIL_MEMBRES AS FAIT_PAR_EMAIL,
+                    
+                    -- Personne qui a modifié
+                    modi.NOM_MEMBRES AS MODIFIE_PAR_NOM,
+                    modi.PRENOM_MEMBRES AS MODIFIE_PAR_PRENOM,
+                    modi.EMAIL_MEMBRES AS MODIFIE_PAR_EMAIL,
+                    
+                    -- Référence (personne qui a parrainé)
+                    ref.NOM_MEMBRES AS REFERENCE_MEMBRE_NOM,
+                    ref.PRENOM_MEMBRES AS REFERENCE_MEMBRE_PRENOM,
+                    ref.EMAIL_MEMBRES AS REFERENCE_MEMBRE_EMAIL
+
+                FROM membres m
+                LEFT JOIN roles r ON r.ID_ROLES = m.ROLE_ID AND r.STATUT_ROLE = 1
+                LEFT JOIN cooperatives c ON c.ID_COOPERATIVE = m.COOPERATIVE_ID AND c.STATUT_COOPER = 1
+                LEFT JOIN membres ref ON ref.ID_MEMBRES = m.REFERENCE_MEMBRE AND ref.STATUT_MEMBRES = 1
+                LEFT JOIN membres fait ON fait.ID_MEMBRES = m.FAIT_PAR AND fait.STATUT_MEMBRES = 1
+                LEFT JOIN membres modi ON modi.ID_MEMBRES = m.MODIFIE_PAR AND modi.STATUT_MEMBRES = 1
+                WHERE m.EMAIL_MEMBRES = :email 
+                AND m.STATUT_MEMBRES = 1
+                LIMIT 1";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':email', $email, PDO::PARAM_STR);
+        $stmt->execute();
+        
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Vérifier le mot de passe
         if ($user && password_verify($password, $user['PASSWORD'])) {
-            // Ne pas renvoyer le mot de passe
+            // Supprimer le mot de passe avant de retourner
             unset($user['PASSWORD']);
             return $user;
         }
